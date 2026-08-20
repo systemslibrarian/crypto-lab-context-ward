@@ -85,8 +85,26 @@ below was applied to `verify.py`, confirmed to fail, and reverted:
 | lone-surrogate rejection removed, `errors="replace"` | all four reject-vectors encode | 4 `encoding/reject/*` failures |
 | pre-cryptographic version gate disabled | `V_REJECTED` no longer reported | `tampered-act7-bump-version.json` failure codes differ |
 
-The equivalent discipline for the TypeScript side is in the repository README
-under **Build & Verify**.
+The same discipline was applied to the TypeScript side and the browser suites.
+Each mutation was applied to the SOURCE, the build was confirmed to succeed (a
+mutation that breaks `tsc` proves nothing -- the suite would run against the last
+good bundle), the bundle hash was confirmed to change, and the mutation was
+reverted immediately afterwards:
+
+| mutation | expected result | observed |
+| --- | --- | --- |
+| `agent-mock.ts` stops treating `runtime` as authoritative | Act 3 no longer compromises the agent, so the NEG-1 evidence weakens | `claims.spec.ts` "NEG-1 on screen" failed; bundle hash changed |
+| `verify.ts` trusts the stored `prev` instead of recomputing `H_(n-1)` | replay and chain-break detection collapse | 2 unit tests failed: the Act 5 replay test and the `CHAIN_BREAK` tamper control |
+| `envelope.ts` drops `role` from `leaf_n` | role is no longer authenticated by the leaf | 1 unit test failed, **and `verify.py` failed 36 checks against the committed fixtures** |
+
+That last row is the two-implementation rule earning its keep: a change made
+only in the TypeScript produced an immediate, loud disagreement with a verifier
+that had not changed. A single implementation agreeing with itself would have
+reported nothing.
+
+Note the counterpart caveat: `npm run check:fixtures` regenerates the fixtures
+and fails on any diff. During a mutation the fixtures must be regenerated back
+before the tree is clean again, or the mutation leaves committed evidence behind.
 
 ## A real cross-implementation caveat
 

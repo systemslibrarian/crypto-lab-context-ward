@@ -211,7 +211,13 @@ rather than trusting any stored one, and shares no code path with the lab. It
 was mutation-tested: salting HKDF with the hex string fails 31 checks,
 normalising strings collapses the two normalisation vectors, dropping the
 surrogate rejection fails all four reject-vectors, and disabling the version
-gate changes the reported failure codes. See `verification/HARNESS.md`.
+gate changes the reported failure codes.
+
+The TypeScript side was mutation-tested too. The sharpest result: dropping
+`role` from `leaf_n` in `src/envelope.ts` failed one unit test **and 36 checks
+in `verify.py`** — a change made only in the browser implementation produced an
+immediate, loud disagreement with a verifier that had not changed. Both tables
+are in `verification/HARNESS.md`.
 
 **`verification/CLAIMS.yaml`** records 20 claims across five sections, each
 anchored to a verbatim snippet of the code it describes. `npm run check:claims`
