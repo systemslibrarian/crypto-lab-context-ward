@@ -87,6 +87,13 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      # `actions: write` is required for the deploy dispatch below. A job-level
+      # `permissions:` block REPLACES the default token scopes rather than adding
+      # to them, so without this line `actions` is `none` and the dispatch fails
+      # with `HTTP 403: Resource not accessible by integration` -- after the merge
+      # has already landed. That is precisely the drift §6.2 exists to prevent:
+      # the bump reaches main and the live site keeps serving the previous build.
+      actions: write
     steps:
       - id: meta
         uses: dependabot/fetch-metadata@v3
