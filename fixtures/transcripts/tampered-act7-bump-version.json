@@ -1,0 +1,68 @@
+{
+  "v": 1,
+  "session": "5b1f3a90c4d27e6188aa02cf4713d5e9b62047ac1e8f35d0729c6ab4f0e1d3c8",
+  "session_key": "a17c02e59d4b8f36c1207ae43f9b5d8021c6e7f40a93b8d25e17c40fb69a3d15",
+  "pinned_tool_keys": {
+    "ticket_db": "dd943affebe69d7f3ceb619bba1318c4f32547dfe422445a79bbfb32c4a18ae5",
+    "web_fetch": "8fb8f3f9b744791dffa1323eb369eb6a2d9a1f4bccca06389cf742c9014c2d0a",
+    "invoice_api": "5fdfeb642649fc8d7c3666193b746ff2cccadf650972124c64c4598346ee88e9"
+  },
+  "segments": [
+    {
+      "envelope": {
+        "v": 1,
+        "session": "5b1f3a90c4d27e6188aa02cf4713d5e9b62047ac1e8f35d0729c6ab4f0e1d3c8",
+        "seq": 0,
+        "role": "system",
+        "tool": null,
+        "body": "You are a release assistant. Be concise.",
+        "prev": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "tag": "826633e4d5610a0e30fa4b737be5f660233071832c56ce81be589c0071d42c22",
+      "sig": null,
+      "tool_key": null
+    },
+    {
+      "envelope": {
+        "v": 1,
+        "session": "5b1f3a90c4d27e6188aa02cf4713d5e9b62047ac1e8f35d0729c6ab4f0e1d3c8",
+        "seq": 1,
+        "role": "user",
+        "tool": null,
+        "body": "Summarise the open tickets blocking the 4.2 release",
+        "prev": "de61942ebca0cdc3e1feb74933ca6f3e0d25fe10654ebdcecb61ff34aab4ea3c"
+      },
+      "tag": "ed89ccfc29bcce80a7846bafca14ac42762b0d42b4ab611915cd4ab9b24ffdaa",
+      "sig": null,
+      "tool_key": null
+    },
+    {
+      "envelope": {
+        "v": 1,
+        "session": "5b1f3a90c4d27e6188aa02cf4713d5e9b62047ac1e8f35d0729c6ab4f0e1d3c8",
+        "seq": 2,
+        "role": "tool_result",
+        "tool": "ticket_db",
+        "body": "REL-4120  open   Flaky integration test on the payments worker",
+        "prev": "d027d15bfea90766ce7f733669ecfd6c70a9870abe019ad0369e59eb6bf86695"
+      },
+      "tag": "ff7d230c4412475c71b2df4b80dd18d07c8aad1af3b45ec90d42f8cf7a73a299",
+      "sig": "3dd42f57bd97384b1d34ceece8e4cd17c10d531dc733794dc5e043a676fd1ff42e95c6a38d9474e5e77558481925ce77c2c630237eadcac3812174548636ce0f",
+      "tool_key": "ticket_db"
+    },
+    {
+      "envelope": {
+        "v": 2,
+        "session": "5b1f3a90c4d27e6188aa02cf4713d5e9b62047ac1e8f35d0729c6ab4f0e1d3c8",
+        "seq": 3,
+        "role": "tool_result",
+        "tool": "ticket_db",
+        "body": "REL-4133  open   Migration 0042 needs a rollback path",
+        "prev": "50790246fd8bb6693a502f9bfc71b49514ba2c4b082a45d3a3c50d70fff1de40"
+      },
+      "tag": "f31c4988b5089a09b6bdf1248cafc39892548725a3f51d5ede1e17300bbbe823",
+      "sig": "09379637f4d4e5f5925fc96573589fead0e82271809bb6596b674294fafab003cf9455667abacb71638a8b517c9c387a04808a05e48916dc13511a37c9b04102",
+      "tool_key": "ticket_db"
+    }
+  ]
+}

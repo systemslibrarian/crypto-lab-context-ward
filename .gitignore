@@ -1,0 +1,9 @@
+node_modules/
+dist/
+test-results/
+playwright-report/
+.vite/
+*.local
+
+# The build standard, kept locally; not part of the published lab.
+_MASTER-TEMPLATE.md

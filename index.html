@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-XLmeeJzo45Xvb5i3oGs+Pyy4Sze4PDTN2hU7ic6lUzE='; style-src 'self'; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'" />
+    <script>
+      // Dark is the only theme. Pin it before first paint, and overwrite any
+      // 'light' a visitor stored back when the header carried a theme toggle.
+      (function () {
+        try {
+          localStorage.setItem('theme', 'dark');
+        } catch (e) {}
+        document.documentElement.setAttribute('data-theme', 'dark');
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Context Ward — crypto-lab</title>
+    <meta
+      name="description"
+      content="A SHA-256 hash chain, role-separated HMAC-SHA-256 seals and Ed25519 tool attestation applied to an agent's context window, showing which context-manipulation failures are detectable structurally and which are not."
+    />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✉</text></svg>"
+    />
+    <script type="module" crossorigin src="./src/main.ts"></script>
+  </head>
+  <body>
+    <header class="cl-topbar">
+      <a class="cl-skip" href="#app">Skip to content</a>
+      <nav class="cl-topbar-inner" aria-label="Crypto Lab">
+        <a class="cl-topbar-brand" href="https://crypto-lab.systemslibrarian.dev/">
+          <span class="cl-topbar-mark" aria-hidden="true">CL</span>
+          <span>Crypto Lab</span>
+        </a>
+        <a
+          class="cl-topbar-link"
+          href="https://github.com/systemslibrarian/crypto-lab-context-ward"
+          >Source</a
+        >
+      </nav>
+    </header>
+
+    <main id="app"></main>
+
+    <footer class="scripture-footer">
+      <p>
+        So whether you eat or drink or whatever you do, do it all for the glory of God. — 1
+        Corinthians 10:31
+      </p>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,3 @@
+# verify.py deliberately depends on exactly one third-party package.
+# Everything else it needs is in the Python 3 standard library.
+cryptography>=42,<47

@@ -1,0 +1,104 @@
+{
+  "note": "enc(s) = uint32be(byte_len(utf8(s))) || utf8(s). No Unicode normalisation. Every string in `reject` MUST be refused rather than encoded with U+FFFD substituted. The two `not-normalised` vectors are canonically equivalent text with deliberately different encodings; an implementation that normalises will produce equal enc_hex.",
+  "accept": [
+    {
+      "name": "empty",
+      "s": "",
+      "note": "zero length, still length-prefixed",
+      "enc_hex": "00000000",
+      "utf8_len": 0
+    },
+    {
+      "name": "ascii",
+      "s": "ticket_db",
+      "note": "plain ASCII",
+      "enc_hex": "000000097469636b65745f6462",
+      "utf8_len": 9
+    },
+    {
+      "name": "latin1-supplement",
+      "s": "café",
+      "note": "U+00E9, two-byte UTF-8",
+      "enc_hex": "00000005636166c3a9",
+      "utf8_len": 5
+    },
+    {
+      "name": "cjk",
+      "s": "発注書",
+      "note": "three-byte UTF-8 (Japanese)",
+      "enc_hex": "00000009e799bae6b3a8e69bb8",
+      "utf8_len": 9
+    },
+    {
+      "name": "astral-musical",
+      "s": "𝄞",
+      "note": "U+1D11E, four-byte UTF-8, a surrogate PAIR in UTF-16",
+      "enc_hex": "00000004f09d849e",
+      "utf8_len": 4
+    },
+    {
+      "name": "astral-emoji",
+      "s": "🔒",
+      "note": "U+1F512, four-byte UTF-8",
+      "enc_hex": "00000004f09f9492",
+      "utf8_len": 4
+    },
+    {
+      "name": "mixed",
+      "s": "a🔒é発",
+      "note": "mixed widths in one string",
+      "enc_hex": "0000000a61f09f9492c3a9e799ba",
+      "utf8_len": 10
+    },
+    {
+      "name": "combining-not-normalised",
+      "s": "é",
+      "note": "U+0065 U+0301 (decomposed) -- must NOT fold to U+00E9; no normalisation is performed",
+      "enc_hex": "0000000365cc81",
+      "utf8_len": 3
+    },
+    {
+      "name": "precomposed-not-normalised",
+      "s": "é",
+      "note": "U+00E9 (composed) -- a DIFFERENT encoding from the decomposed form above, by design",
+      "enc_hex": "00000002c3a9",
+      "utf8_len": 2
+    },
+    {
+      "name": "newlines",
+      "s": "line1\nline2\r\n",
+      "note": "control characters pass through unchanged",
+      "enc_hex": "0000000d6c696e65310a6c696e65320d0a",
+      "utf8_len": 13
+    },
+    {
+      "name": "embedded-nul",
+      "s": "a\u0000b",
+      "note": "an embedded NUL is data, not a terminator",
+      "enc_hex": "00000003610062",
+      "utf8_len": 3
+    }
+  ],
+  "reject": [
+    {
+      "name": "lone-high-surrogate",
+      "s": "a\ud800b",
+      "reason": "unpaired high surrogate U+D800"
+    },
+    {
+      "name": "lone-low-surrogate",
+      "s": "a\udc00b",
+      "reason": "unpaired low surrogate U+DC00"
+    },
+    {
+      "name": "trailing-high-surrogate",
+      "s": "ab\ud83d",
+      "reason": "unpaired high surrogate at end of string"
+    },
+    {
+      "name": "reversed-pair",
+      "s": "\udc00\ud800",
+      "reason": "low surrogate before high surrogate"
+    }
+  ]
+}

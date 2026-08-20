@@ -1,0 +1,450 @@
+# CLAIMS.yaml -- crypto-lab-context-ward
+#
+# Schema v0.2. Every claim carries a `code_anchor`: a verbatim snippet of at
+# most three lines, matched against the named file by EXACT STRING. If a claim
+# drifts away from the code it describes, `npm run check:claims` fails.
+#
+# Claims below `high` confidence are required to carry an `open_question`.
+# `extraction_hash` is PENDING and `audit_mode.confirmed` is unset: this file is
+# human-written and has not been machine-audited.
+
+schema: 0.2
+repo: crypto-lab-context-ward
+protocol_version: 1
+extraction_hash: PENDING
+
+audit_mode:
+  # Deliberately unset. Setting `confirmed` is a human act performed after an
+  # audit; nothing in this repository's tooling may set it.
+  confirmed:
+  method: hand-written from docs/MATH.md and the source, 2026-08-20
+
+# ---------------------------------------------------------------------------
+invariants:
+
+  - id: INV-1
+    claim: >
+      enc(s) is injective over sequences of strings: given a concatenation of
+      enc() outputs, the field boundaries are recoverable, so no two distinct
+      field sequences share an encoding.
+    confidence: high
+    implementation_provenance: src/bytes.ts, reimplemented independently in verification/verify.py
+    code_anchor:
+      file: src/bytes.ts
+      snippet: |
+        export function enc(s: string): Uint8Array {
+          const body = utf8(s)
+          return cat(u32be(body.length), body)
+    evidence:
+      - src/bytes.test.ts "is unambiguous under concatenation"
+      - fixtures/vectors/encoding.json
+
+  - id: INV-2
+    claim: >
+      No Unicode normalisation is performed. Canonically equivalent strings with
+      different code points produce different encodings.
+    confidence: high
+    implementation_provenance: src/bytes.ts; verify.py asserts the two forms differ
+    code_anchor:
+      file: verification/verify.py
+      snippet: |
+        def utf8(s: str) -> bytes:
+            """Strict UTF-8. No normalisation is performed, by design."""
+            assert_no_lone_surrogates(s)
+    evidence:
+      - src/bytes.test.ts "does not normalise"
+      - fixtures/vectors/encoding.json accept[combining-not-normalised, precomposed-not-normalised]
+      - verify.py check "encoding/no-normalisation"
+
+  - id: INV-3
+    claim: >
+      Unpaired UTF-16 surrogates are rejected rather than substituted with
+      U+FFFD, in both implementations.
+    confidence: high
+    implementation_provenance: src/bytes.ts and verification/verify.py, written separately
+    code_anchor:
+      file: src/bytes.ts
+      snippet: |
+        export function assertNoLoneSurrogates(s: string): void {
+    evidence:
+      - src/bytes.test.ts "rejects an unpaired HIGH surrogate rather than substituting U+FFFD"
+      - fixtures/vectors/encoding.json reject[4 vectors]
+
+  - id: INV-4
+    claim: >
+      Every field displayed in the envelope inspector is either covered by
+      leaf_n or explicitly rejected before any cryptographic verification runs.
+      There are no displayed-but-unauthenticated fields. `prev` is the sole
+      field outside leaf_n, and it is checked against an independent
+      recomputation of H_(n-1) rather than trusted.
+    confidence: high
+    implementation_provenance: src/envelope.ts (leaf), src/verify.ts (pre-crypto gate and prev check)
+    code_anchor:
+      file: src/verify.ts
+      snippet: |
+        if (t.v !== PROTOCOL_VERSION) {
+    evidence:
+      - src/protocol.test.ts "covers every field it displays"
+      - src/protocol.test.ts "does NOT cover prev -- prev is a display mirror"
+      - docs/MATH.md 4.2
+
+  - id: INV-5
+    claim: >
+      prev is not an input to leaf_n. The chain hash H_n is authoritative; prev
+      exists so the inspector can draw the link between segments.
+    confidence: high
+    implementation_provenance: src/envelope.ts; verify.py reimplements the same omission
+    code_anchor:
+      file: src/envelope.ts
+      snippet: |
+        export async function leafHash(e: Envelope): Promise<Uint8Array> {
+    evidence:
+      - src/protocol.test.ts "does NOT cover prev -- prev is a display mirror"
+      - docs/MATH.md 4.1
+
+  - id: INV-6
+    claim: >
+      The verifier never uses a value stored in the transcript as an input to a
+      check. Leaves, chain hashes and tags are recomputed; stored values are
+      only ever compared against the recomputation.
+    confidence: high
+    implementation_provenance: src/verify.ts and verification/verify.py
+    code_anchor:
+      file: src/verify.ts
+      snippet: |
+        const expectedPrev = bytesEqual(h, ZERO32) && i === 0 ? ZERO_PREV : toHex(h)
+    evidence:
+      - verify.py mutation test: substituting the stored prev for the recomputation is caught
+
+# ---------------------------------------------------------------------------
+security_behaviors:
+
+  - id: SEC-1
+    claim: >
+      A tool_result tag does not verify as a system tag. More generally, no
+      role's tag verifies under any other role, across all 36 ordered pairs.
+    confidence: high
+    implementation_provenance: src/seal.ts; independently recomputed in verify.py
+    code_anchor:
+      file: src/seal.ts
+      snippet: |
+        export async function sealTag(roleKey: Uint8Array, role: Role, chainHash: Uint8Array) {
+    evidence:
+      - src/protocol.test.ts "REQUIRED: a tool_result tag does NOT verify as a system tag"
+      - src/protocol.test.ts "no tag verifies under any role other than its own"
+      - verify.py check "protocol/tool-tag-is-not-system-tag"
+
+  - id: SEC-2
+    claim: >
+      A validly signed tool_result from an earlier session, spliced into a new
+      session, fails on both SESSION_MISMATCH and CHAIN_BREAK. Its Ed25519
+      signature remains genuine; it attests to a position in a different
+      transcript.
+    confidence: high
+    implementation_provenance: src/attest.ts binds session and seq into the signed message
+    code_anchor:
+      file: src/attest.ts
+      snippet: |
+        export function attestationMessage(session: string, seq: number, leaf: Uint8Array): Uint8Array {
+          return cat(enc(TOOL_LABEL), enc(session), u32be(seq), leaf)
+    evidence:
+      - src/acts/acts.test.ts "act 5 is the one the crypto genuinely prevents"
+      - src/acts/acts.test.ts "the spliced act 5 segment carries a genuine signature"
+      - fixtures/transcripts/act5.json
+
+  - id: SEC-3
+    claim: >
+      Each tamper control produces the specific named failure it advertises:
+      ROLE_MISMATCH, BAD_TAG, SEQ_GAP, CHAIN_BREAK, V_REJECTED, BAD_SIGNATURE,
+      SESSION_MISMATCH. No control produces a generic "invalid".
+    confidence: high
+    implementation_provenance: src/verify.ts; the same codes are derived independently by verify.py
+    code_anchor:
+      file: src/verify.ts
+      snippet: |
+        export const FAILURE_NAMES: Record<FailureCode, string> = {
+    evidence:
+      - src/acts/acts.test.ts "every tamper control produces the failure it advertises"
+      - fixtures/MANIFEST.json expect_codes, cross-checked by verify.py
+
+  - id: SEC-4
+    claim: >
+      A relabelled segment is named as ROLE_MISMATCH rather than BAD_TAG. This
+      requires recomputing the counterfactual leaf and chain step under each
+      candidate role, because role is covered by leaf_n and a relabel therefore
+      moves the chain head as well as the seal key.
+    confidence: high
+    implementation_provenance: src/verify.ts; verify.py implements the same counterfactual probe
+    code_anchor:
+      file: src/verify.ts
+      snippet: |
+          const asRole = await chainStep(hPrev, await leafHash({ ...e, role: r }))
+    evidence:
+      - src/acts/acts.test.ts "act 2 -- Relabel role -> system"
+      - docs/MATH.md 7.6
+    note: >
+      This was a real defect during construction. The first implementation probed
+      the stored tag against the CURRENT chain head under other roles, which can
+      never match, making ROLE_MISMATCH unreachable. The act tests caught it.
+
+  - id: SEC-5
+    claim: >
+      v is rejected before any cryptographic operation runs, so an envelope
+      claiming an unsupported version never reaches code that would interpret
+      its fields.
+    confidence: high
+    implementation_provenance: src/verify.ts and verification/verify.py
+    code_anchor:
+      file: verification/verify.py
+      snippet: |
+            if t.get("v") != PROTOCOL_VERSION:
+    evidence:
+      - fixtures/transcripts/tampered-act7-bump-version.json expects V_REJECTED
+      - verify.py mutation test: disabling the gate changes the reported codes
+
+# ---------------------------------------------------------------------------
+# The required negative claim. The limitation is itself verified.
+negative_claims:
+
+  - id: NEG-1
+    claim: >
+      Authenticated context does not prevent semantic injection. A transcript
+      can pass every cryptographic check -- chain intact, seal valid, role
+      correct, tool signature valid against a pinned key -- while carrying
+      content that fully compromises the agent consuming it.
+    confidence: high
+    implementation_provenance: >
+      Demonstrated, not asserted. verify.py returns all-green on the fixtures
+      below and prints them by name on every run.
+    code_anchor:
+      file: verification/verify.py
+      snippet: |
+            "\nNEG-1: %d fixture(s) verified COMPLETELY CLEAN while carrying a payload\n"
+    evidence:
+      - fixtures/transcripts/act8a.json   # honest tool, hostile payload
+      - fixtures/transcripts/act8b.json   # malicious or compromised tool
+      - fixtures/transcripts/act2.json    # injection via tool output
+      - fixtures/transcripts/act3.json    # injection via runtime result
+      - fixtures/transcripts/act4.json    # injection via persisted state
+      - src/acts/acts.test.ts "is cryptographically GREEN and the agent is still compromised"
+    note: >
+      verify.py FAILS if no such fixture exists. Deleting the evidence for this
+      claim breaks the build rather than quietly weakening the documentation.
+
+  - id: NEG-2
+    claim: >
+      Provenance labels are not a defence by themselves. The scripted agent
+      reads SOURCE: TOOL_RESULT, SOURCE: RUNTIME and SOURCE: STATE correctly and
+      is compromised by all three, because its policy treats every
+      authoritative-role segment as instruction.
+    confidence: high
+    implementation_provenance: src/agent-mock.ts; the policy never consults the verifier
+    code_anchor:
+      file: src/agent-mock.ts
+      snippet: |
+        export function runAgent(t: Transcript, task: string): AgentRun {
+    evidence:
+      - src/acts/acts.test.ts "behaves identically on a clean and a tampered transcript"
+
+# ---------------------------------------------------------------------------
+threat_model:
+
+  - id: THREAT-1
+    claim: >
+      Role separation assumes a trusted host. Anyone holding K_session derives
+      every K_role and can mint a valid tag for any role, over content they
+      wrote. The seal layer offers no protection against a compromised host.
+    confidence: high
+    implementation_provenance: src/tamper.ts implements the attack against the real seal code
+    code_anchor:
+      file: src/tamper.ts
+      snippet: |
+        export async function forgeAsCompromisedHost(
+    evidence:
+      - fixtures/transcripts/tampered-act6-compromised-host.json  # verifies CLEAN
+      - src/acts/acts.test.ts "mints a valid system seal AND cannot re-sign the tool attestation"
+      - docs/THREAT-MODEL.md "A compromised or malicious host"
+
+  - id: THREAT-2
+    claim: >
+      Ed25519 tool attestation is the only layer that survives a compromised
+      host. A host attacker cannot forge a tool signature; in the exhibit's
+      control, downstream signatures are dropped rather than forged, and their
+      absence is the only residue.
+    confidence: high
+    implementation_provenance: src/tamper.ts drops rather than forges the downstream signature
+    code_anchor:
+      file: src/tamper.ts
+      snippet: |
+            if (i > index && s.sig) {
+    evidence:
+      - src/acts/acts.test.ts "mints a valid system seal AND cannot re-sign the tool attestation"
+
+  - id: THREAT-3
+    claim: >
+      Pinning a tool's public key establishes key identity, never tool
+      trustworthiness. A stolen key and a hostile tool are indistinguishable
+      from an honest tool at the verification layer.
+    confidence: high
+    implementation_provenance: Act 8b signs hostile content with a correctly pinned key
+    code_anchor:
+      file: src/acts/index.ts
+      snippet: |
+        title: 'Malicious or compromised tool',
+    evidence:
+      - fixtures/transcripts/act8b.json  # verifies CLEAN
+      - arXiv:2506.02040
+
+# ---------------------------------------------------------------------------
+parameters:
+
+  - id: PARAM-1
+    claim: "HKDF-SHA256 salt is the RAW 32 session bytes, not the 64-character hex string."
+    confidence: high
+    implementation_provenance: src/seal.ts; verify.py reimplements from docs/MATH.md 2
+    code_anchor:
+      file: src/seal.ts
+      snippet: |
+        export async function deriveRoleKey(
+    evidence:
+      - src/protocol.test.ts "uses the RAW session bytes as HKDF salt, not the hex string"
+      - verify.py mutation test: salting with the hex string fails 31 checks
+
+  - id: PARAM-2
+    claim: >
+      Domain separators are cw/v1/leaf, cw/v1/chain, cw/v1/seal, cw/v1/tool and
+      the HKDF info prefix cw/v1/role/. All but the info prefix are enc()-wrapped.
+    confidence: high
+    implementation_provenance: src/envelope.ts, src/chain.ts, src/seal.ts, src/attest.ts
+    code_anchor:
+      file: src/attest.ts
+      snippet: |
+        const TOOL_LABEL = 'cw/v1/tool'
+    evidence:
+      - docs/MATH.md 4, 5, 6
+
+  - id: PARAM-3
+    claim: "H_(-1) is 32 zero bytes; prev at seq 0 is 64 zero characters."
+    confidence: high
+    implementation_provenance: src/bytes.ts constants, used by both chain and verifier
+    code_anchor:
+      file: src/bytes.ts
+      snippet: |
+        export const ZERO32 = new Uint8Array(32)
+    evidence:
+      - src/protocol.test.ts "starts from 32 zero bytes"
+
+  - id: PARAM-4
+    claim: >
+      Ed25519 comes from vendored @noble/ed25519 3.1.0, pinned by SHA-256 and
+      checked offline before every build. SHA-256, HMAC-SHA-256 and HKDF-SHA-256
+      come from WebCrypto. No primitive is hand-rolled.
+    confidence: high
+    implementation_provenance: vendor/noble-ed25519/INTEGRITY.md, tools/check-vendor.mjs
+    code_anchor:
+      file: src/primitives.ts
+      snippet: |
+        import * as ed from '../vendor/noble-ed25519/index.js'
+    evidence:
+      - vendor/noble-ed25519/SHA256SUMS
+      - npm test runs check:vendor first
+
+# ---------------------------------------------------------------------------
+open_questions:
+
+  - id: OQ-1
+    question: >
+      Do provenance labels help a MODEL, as opposed to a human auditor or an
+      automated policy layer?
+    why_open: >
+      Untestable with a deterministic mock. Establishing whether a real model
+      conditions on a SOURCE: TOOL_RESULT label would require an evaluation
+      against real models, which this exhibit deliberately does not perform.
+    bearing_on_claims: [NEG-2]
+
+  - id: OQ-2
+    question: >
+      Does the ROLE_MISMATCH counterfactual probe have a false-positive mode?
+    why_open: >
+      The probe reports the first candidate role whose recomputed tag matches.
+      A collision would require an HMAC-SHA-256 forgery, so a false positive is
+      infeasible under the stated assumptions -- but the probe is a
+      construction of this exhibit rather than a standard one, and it has not
+      been analysed beyond that argument.
+    bearing_on_claims: [SEC-4]
+
+  - id: OQ-3
+    question: >
+      Do the two implementations agree on Ed25519 edge cases outside the
+      fixtures?
+    why_open: >
+      @noble/ed25519 verifies under ZIP-215 semantics by default; the Python
+      `cryptography` package follows RFC 8032. The two differ on small-order
+      and non-canonical points. Every signature in the fixtures is honestly
+      generated, so both accept them and the difference never arises here --
+      but the exhibit does not include adversarial signature vectors that would
+      expose it, and a production system would need to pin one semantics.
+    bearing_on_claims: [SEC-2]
+    see: verification/HARNESS.md
+
+  - id: OQ-4
+    question: >
+      Is the scripted agent's trust policy representative of deployed systems?
+    why_open: >
+      The policy -- treat every authoritative-role segment as instruction -- is
+      described in the brief as one real systems commonly use, and matches the
+      shape of the attacks in arXiv:2506.02040 and arXiv:2506.09956. This
+      exhibit does not survey deployed systems to establish how common it is,
+      and makes no measurement of any real model.
+    bearing_on_claims: [NEG-1, NEG-2]
+
+# ---------------------------------------------------------------------------
+refs:
+  - id: arXiv:2405.20234
+    title: "Hidden in Plain Sight: Exploring Chat History Tampering in Interactive Language Models"
+    version: v3
+    revised: 2024-09-06
+    url: https://arxiv.org/abs/2405.20234
+    cited_for: Act 4, injection via persisted state
+    verified: 2026-08-20
+    note: >
+      Earlier versions carry the title "Context Injection Attacks on Large
+      Language Models"; some indexes still show it.
+
+  - id: arXiv:2506.02040
+    title: "Beyond the Protocol: Unveiling Attack Vectors in the Model Context Protocol (MCP) Ecosystem"
+    version: v4
+    revised: 2025-09-14
+    url: https://arxiv.org/abs/2506.02040
+    cited_for: >
+      Acts 8a and 8b. Names "Exploitation via Malicious External Resources" as a
+      category distinct from a malicious server -- exactly Act 8a's distinction.
+    verified: 2026-08-20
+
+  - id: arXiv:2602.10481
+    title: "Protecting Context and Prompts: Deterministic Security for Non-Deterministic AI"
+    version: v1
+    revised: 2026-02-11
+    url: https://arxiv.org/abs/2602.10481
+    cited_for: Closest prior art for the defence layer; authenticated context via tamper-evident hash chains
+    verified: 2026-08-20
+    note: >
+      Its reported 100% detection covers the full layered system including
+      LLM-based semantic validation, not the hash chain alone. This exhibit
+      implements only the provenance-and-integrity layer.
+
+  - id: arXiv:2506.09956
+    title: "LLMail-Inject: A Dataset from a Realistic Adaptive Prompt Injection Challenge"
+    version: v1
+    revised: 2025-06-11
+    url: https://arxiv.org/abs/2506.09956
+    cited_for: The instruction/data problem under adaptive attackers
+    verified: 2026-08-20
+
+  - id: OWASP-LLM01
+    title: "OWASP Top 10 for LLM Applications -- LLM01: Prompt Injection"
+    url: https://genai.owasp.org/llmrisk/llm01-prompt-injection/
+    cited_for: >
+      Separating and identifying external content is a useful mitigation but does
+      not eliminate the instruction/data problem.
+    verified: 2026-08-20

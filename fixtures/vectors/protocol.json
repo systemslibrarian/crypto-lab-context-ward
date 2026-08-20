@@ -1,0 +1,45 @@
+{
+  "note": "Intermediate values for a single envelope, so a second implementation can localise a mismatch instead of only observing that the final tag differs. The HKDF salt is the RAW 32 session bytes, NOT the 64-character hex string -- that is the single place the two representations diverge and the likeliest source of a mismatch.",
+  "session_key": "a17c02e59d4b8f36c1207ae43f9b5d8021c6e7f40a93b8d25e17c40fb69a3d15",
+  "session_bytes": "5b1f3a90c4d27e6188aa02cf4713d5e9b62047ac1e8f35d0729c6ab4f0e1d3c8",
+  "envelope": {
+    "v": 1,
+    "session": "5b1f3a90c4d27e6188aa02cf4713d5e9b62047ac1e8f35d0729c6ab4f0e1d3c8",
+    "seq": 7,
+    "role": "tool_result",
+    "tool": "ticket_db",
+    "body": "café 𝄞 発注書\nline two",
+    "prev": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+  },
+  "leaf": "88c94704b4fc8a4f6e44d6e5ab5ba6ee3ca513aaf33f8afd5c55dd2d40a8434a",
+  "chain_from_zero": "7119d85dda650f42116c291ac0ba0c061d6a564af57ee3b2795957f9c5b6fe68",
+  "chain_from_prev": {
+    "h_prev": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "h_n": "bbd2f5b6d90ceb29f6a38c05903391601e12d8cdba6fb582eff8b307badc5e5b"
+  },
+  "role_keys": {
+    "system": "ec12aa7b70ccb885dfd23a02533dd583d59b9e59ca5b0f7da3ac7d44f4af3aa1",
+    "user": "4c25abf49de64d4470b82a514cf52b8f281d74a2cd55a523cdae5eb1d8ca761e",
+    "tool_result": "70ad4d6218b80bec34d0e5e19d76b4fa8a8d86888fa17cb1ba127d4e5492b805",
+    "runtime": "98765f3c324f6c255a370a8a0d9a747c92aa4a08522fff408f0558880775a86f",
+    "state": "16acc2d966d2b13402dd4410ac0b82f918da8db63ddbb77ff9471a086b9e5f33",
+    "retrieved": "cfbe8b0bfc7489507f831b4c7f6f9133bcae2d69f54fc62846cc86335dd4f1ad"
+  },
+  "tags_over_chain_from_prev": {
+    "system": "7c9644b8efe78e18e3f1b4ddd10acab0c4cdad90a9b89052d5d0d37a413b1c7a",
+    "user": "b9af6272ae30ac54e58888f5a185acbc4c03efa1428ddad63d783f9cb3b27cd2",
+    "tool_result": "e704f312c3e32043ba261a2b89fea0eda2ea083a19d3d454099ce7e9b27ed184",
+    "runtime": "15f83611aaedf0f359b96b1b6ef13fe3739e6252b722383b3623a2a82014ca89",
+    "state": "8dc94955c798c209bb675be72e52b75f6f19f1ec084972920e36340ba4d5d310",
+    "retrieved": "0bcc35e609c3aa4a23f4e126116a11e17c9738984f1eb90ffa0e3ecb45191f53"
+  },
+  "tool_attestation": {
+    "tool": "ticket_db",
+    "public_key": "dd943affebe69d7f3ceb619bba1318c4f32547dfe422445a79bbfb32c4a18ae5",
+    "secret_key_seed": "11111111111111111111111111111111111111111111111111111111111111a1",
+    "session": "5b1f3a90c4d27e6188aa02cf4713d5e9b62047ac1e8f35d0729c6ab4f0e1d3c8",
+    "seq": 7,
+    "leaf": "88c94704b4fc8a4f6e44d6e5ab5ba6ee3ca513aaf33f8afd5c55dd2d40a8434a",
+    "signature": "f890a944fbc7174af41cd12356642c74d3ecde410a53b3f73ee63a5a7cf3a03f7ba5ebfc6fa088f8abc695d849f31a80bf22e9d0030a3ba383817acf16447100"
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "v": 1,
+  "session": "5b1f3a90c4d27e6188aa02cf4713d5e9b62047ac1e8f35d0729c6ab4f0e1d3c8",
+  "session_key": "a17c02e59d4b8f36c1207ae43f9b5d8021c6e7f40a93b8d25e17c40fb69a3d15",
+  "pinned_tool_keys": {
+    "ticket_db": "dd943affebe69d7f3ceb619bba1318c4f32547dfe422445a79bbfb32c4a18ae5",
+    "web_fetch": "8fb8f3f9b744791dffa1323eb369eb6a2d9a1f4bccca06389cf742c9014c2d0a",
+    "invoice_api": "5fdfeb642649fc8d7c3666193b746ff2cccadf650972124c64c4598346ee88e9"
+  },
+  "segments": [
+    {
+      "envelope": {
+        "v": 1,
+        "session": "5b1f3a90c4d27e6188aa02cf4713d5e9b62047ac1e8f35d0729c6ab4f0e1d3c8",
+        "seq": 0,
+        "role": "system",
+        "tool": null,
+        "body": "You are a research assistant. Cite your sources.",
+        "prev": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "tag": "d7e0e923b8836e84f0b75f8fef5e85ceccb26cc029ff622248b267c8eb3c03dd",
+      "sig": null,
+      "tool_key": null
+    },
+    {
+      "envelope": {
+        "v": 1,
+        "session": "5b1f3a90c4d27e6188aa02cf4713d5e9b62047ac1e8f35d0729c6ab4f0e1d3c8",
+        "seq": 1,
+        "role": "user",
+        "tool": null,
+        "body": "Research how our competitors price their support tiers",
+        "prev": "b594dcf5468e6d7b9b0dec341e327939710a2b094c9e7f4960fc8a6f655ec44b"
+      },
+      "tag": "99010d18cb618744e0cd972c138c70238fd75a53d72e25a4805a9a2017811942",
+      "sig": null,
+      "tool_key": null
+    },
+    {
+      "envelope": {
+        "v": 1,
+        "session": "5b1f3a90c4d27e6188aa02cf4713d5e9b62047ac1e8f35d0729c6ab4f0e1d3c8",
+        "seq": 2,
+        "role": "retrieved",
+        "tool": "web_fetch",
+        "body": "GET https://competitor.example/pricing — 200 OK — (page removed)",
+        "prev": "cd2a518016f32f82f8e70fcc9e1476a5cf8c657bdbd8dbfd4064fed00e2ed303"
+      },
+      "tag": "0126d5611f713897f5cd8c7e7273438a8e9b9bbc4b6b992da39c90c8a19319e6",
+      "sig": "a772454c9f5c444ecf15b3258dbc163f567abee823d15428b3e03699bc00de423ed41bb9bf524b1f2c0b0bb72bdd6257414690865a484caa7cebcdb44870ef0e",
+      "tool_key": "web_fetch"
+    }
+  ]
+}
