@@ -11,7 +11,7 @@
  */
 import { clear, el, short } from './dom.ts'
 import { checkRows, failureName } from './checks.ts'
-import { buildActs, type Act } from '../acts/index.ts'
+import { buildActs, type Act, type Cite } from '../acts/index.ts'
 import { verifyTranscript, type SealedSegment, type Transcript, type VerifyResult } from '../verify.ts'
 import { runAgent, SCRIPTED_TRANSCRIPT_DISCLOSURE, type AgentRun } from '../agent-mock.ts'
 import { leafHashHex, type Envelope } from '../envelope.ts'
@@ -97,6 +97,44 @@ function threeQuestions(): HTMLElement {
     q('Was this context altered?', 'ANSWERED — hash chain, HMAC seal', 'yes'),
     q('Who supplied it?', 'ANSWERED — Ed25519 tool attestation', 'yes'),
     q('Should the model obey it?', 'NOT ANSWERED — nothing here can', 'no'),
+  ])
+}
+
+const CITE_KIND: Record<Cite['kind'], string> = {
+  paper: 'PAPER',
+  incident: 'FIELD INCIDENT',
+}
+
+const PRIOR_ART_URL =
+  'https://github.com/systemslibrarian/crypto-lab-context-ward/blob/main/docs/PRIOR-ART.md'
+
+/**
+ * Sources for an act. The kind tag is not decoration: a vendor disclosure
+ * writeup and a peer-reviewed paper are not the same kind of evidence, and an
+ * exhibit whose whole subject is unearned confidence cannot present them as
+ * though they were.
+ */
+function citeList(cites: Cite[]): HTMLElement {
+  return el(
+    'ul',
+    { class: 'ward-cites', 'aria-label': 'Sources for this act' },
+    cites.map((c) =>
+      el('li', { class: 'ward-cite', 'data-kind': c.kind }, [
+        el('span', { class: 'ward-cite-kind' }, [CITE_KIND[c.kind]]),
+        el('a', { class: 'ward-cite-id', href: c.url, rel: 'noreferrer noopener' }, [c.id]),
+        el('span', { class: 'ward-cite-why' }, [` — ${c.why}`]),
+      ]),
+    ),
+  )
+}
+
+function sourcesNote(): HTMLElement {
+  return el('p', { class: 'ward-sources-note' }, [
+    'Every citation, with the papers held to a stricter standard than the field incidents and ' +
+      'the difference stated rather than smoothed over: ',
+    el('a', { href: PRIOR_ART_URL, rel: 'noreferrer noopener' }, ['docs/PRIOR-ART.md']),
+    '. None of the incidents cited above would have been prevented by anything on this page. ' +
+      'That is why they are cited.',
   ])
 }
 
@@ -303,10 +341,8 @@ async function renderAct(container: HTMLElement, state: State): Promise<void> {
     ]),
   )
 
-  if (act.cite) {
-    container.appendChild(
-      el('p', { class: 'ward-cite' }, [`${act.cite.id} — ${act.cite.why}`]),
-    )
+  if (act.cites && act.cites.length > 0) {
+    container.appendChild(citeList(act.cites))
   }
 
   container.appendChild(
@@ -517,6 +553,7 @@ export async function mount(root: HTMLElement): Promise<void> {
   })
   root.appendChild(actBar)
   root.appendChild(actPanel)
+  root.appendChild(sourcesNote())
 
   await renderAct(actPanel, state)
 }

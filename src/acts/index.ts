@@ -28,6 +28,21 @@ export type Verdict =
   | 'green-but-fooled' // every check passes; the agent is compromised anyway
   | 'caught' // the crypto names a specific failure
 
+/**
+ * A source shown beneath an act.
+ *
+ * `paper` is peer-reviewed or standards-track. `incident` is a vendor
+ * disclosure writeup: a weaker evidence class, labelled as one in the UI so a
+ * visitor is never left to assume otherwise. docs/PRIOR-ART.md keeps the same
+ * split, for the same reason.
+ */
+export interface Cite {
+  id: string
+  url: string
+  why: string
+  kind: 'paper' | 'incident'
+}
+
 export interface Act {
   id: string
   n: number
@@ -47,7 +62,7 @@ export interface Act {
   task: string
   /** Index of the segment the act is about, for the provenance banner. */
   focus: number
-  cite?: { id: string; why: string }
+  cites?: Cite[]
   build: () => Promise<Transcript>
   tampers: TamperControl[]
 }
@@ -194,6 +209,19 @@ export async function buildActs(): Promise<Act[]> {
     verdict: 'green-but-fooled',
     task: TASK_INVOICE,
     focus: 3,
+    cites: [
+      {
+        id: 'Adversa AI, 2026',
+        url: 'https://adversa.ai/blog/cryptographic-context-injection-grok-data-theft/',
+        kind: 'incident',
+        why:
+          'Reported against Grok and Gemini: a payload the guardrails cannot read because they ' +
+          'inspect rather than execute, decrypted by the model inside its own sandbox and then ' +
+          'treated as its own runtime output. Their word for it is “trust laundering”. Note the ' +
+          'name collision — their “cryptographic context injection” is encryption used to smuggle ' +
+          'a payload in, the opposite direction from this exhibit.',
+      },
+    ],
     build: async () => {
       const h = await seededHost()
       await h.append({ role: 'system', body: 'You are a finance assistant. Be careful with numbers.' })
@@ -252,12 +280,26 @@ export async function buildActs(): Promise<Act[]> {
     verdict: 'green-but-fooled',
     task: TASK_RESEARCH,
     focus: 2,
-    cite: {
-      id: 'arXiv:2405.20234',
-      why:
-        'Hidden in Plain Sight studies exactly this: manipulating the recorded conversation ' +
-        'history of an interactive LLM, rather than the live prompt.',
-    },
+    cites: [
+      {
+        id: 'arXiv:2405.20234',
+        url: 'https://arxiv.org/abs/2405.20234',
+        kind: 'paper',
+        why:
+          'Hidden in Plain Sight studies exactly this: manipulating the recorded conversation ' +
+          'history of an interactive LLM, rather than the live prompt.',
+      },
+      {
+        id: 'CoSnitch · CVE-2026-24301',
+        url: 'https://www.varonis.com/blog/cosnitch',
+        kind: 'incident',
+        why:
+          'Injection hidden in webpage metadata poisoned Microsoft 365 Copilot’s memory across ' +
+          'sessions. Pointedly not Act 5: nothing is moved between transcripts, so SESSION_MISMATCH ' +
+          'and CHAIN_BREAK never fire. The host writes the note legitimately in one session and ' +
+          'reads it back legitimately in the next, and both seals are valid.',
+      },
+    ],
     build: async () => {
       const h = await seededHost()
       await h.append({ role: 'system', body: 'You are a research assistant with a persistent scratchpad.' })
@@ -493,12 +535,26 @@ export async function buildActs(): Promise<Act[]> {
     verdict: 'green-but-fooled',
     task: TASK_RESEARCH,
     focus: 2,
-    cite: {
-      id: 'arXiv:2506.02040',
-      why:
-        'The MCP survey names “Exploitation via Malicious External Resources” as a distinct ' +
-        'category from a malicious server — an honest tool relaying a hostile resource.',
-    },
+    cites: [
+      {
+        id: 'arXiv:2506.02040',
+        url: 'https://arxiv.org/abs/2506.02040',
+        kind: 'paper',
+        why:
+          'The MCP survey names “Exploitation via Malicious External Resources” as a distinct ' +
+          'category from a malicious server — an honest tool relaying a hostile resource.',
+      },
+      {
+        id: 'SearchLeak · CVE-2026-42824',
+        url: 'https://www.varonis.com/blog/searchleak',
+        kind: 'incident',
+        why:
+          'The honest boundary of everything on this page. Only the first link of its chain is an ' +
+          'instruction/data problem; the other two are streaming-render order and a CSP-allowlisted ' +
+          'egress path. A construction that answers “was this altered” and “who supplied it” ' +
+          'answers neither “should this render” nor “where may this connect”.',
+      },
+    ],
     build: async () => {
       const h = await seededHost()
       await h.append({ role: 'system', body: 'You are a research assistant. Cite your sources.' })
@@ -546,10 +602,14 @@ export async function buildActs(): Promise<Act[]> {
     verdict: 'green-but-fooled',
     task: TASK_INVOICE,
     focus: 2,
-    cite: {
-      id: 'arXiv:2506.02040',
-      why: 'Tool Poisoning, Puppet and Rug Pull attacks all arrive through a tool the client trusts.',
-    },
+    cites: [
+      {
+        id: 'arXiv:2506.02040',
+        url: 'https://arxiv.org/abs/2506.02040',
+        kind: 'paper',
+        why: 'Tool Poisoning, Puppet and Rug Pull attacks all arrive through a tool the client trusts.',
+      },
+    ],
     build: async () => {
       const h = await seededHost()
       await h.append({ role: 'system', body: 'You are a finance assistant. Be careful with numbers.' })

@@ -747,12 +747,56 @@ body {
   font-size: 0.9rem;
 }
 
+.ward-cites {
+  list-style: none;
+  margin: 1rem 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+  max-width: 68ch;
+}
+
 .ward-cite {
   font-size: 0.83rem;
   color: var(--text-dim);
   border-left: 2px solid var(--border-strong);
   padding-left: 0.7rem;
-  margin: 1rem 0;
+  margin: 0;
+}
+
+/* The accent edge marks the weaker evidence class. The kind is also spelled
+   out in words directly above it, so the distinction never rests on colour --
+   the same rule the rest of this file follows for --ok, --fail and --alarm. */
+.ward-cite[data-kind='incident'] {
+  border-left-color: var(--accent);
+}
+
+.ward-cite-kind {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  /* 6.40:1 on --bg. */
+  color: var(--text-muted);
+}
+
+/* 8.53:1 on --bg. */
+.ward-cite[data-kind='incident'] .ward-cite-kind {
+  color: var(--accent);
+}
+
+.ward-cite-id {
+  font-family: var(--mono);
+}
+
+.ward-sources-note {
+  font-size: 0.83rem;
+  color: var(--text-dim);
+  max-width: 68ch;
+  margin: 1.75rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
 }
 
 /* --- Tamper controls ------------------------------------------------------ */

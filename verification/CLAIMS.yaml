@@ -448,3 +448,57 @@ refs:
       Separating and identifying external content is a useful mitigation but does
       not eliminate the instruction/data problem.
     verified: 2026-08-20
+
+  # Field incidents. Vendor disclosure writeups, not peer-reviewed work: a
+  # weaker evidence class, kept distinct here and labelled as such in the UI.
+  # None of these would have been prevented by the construction in this
+  # exhibit, which is the reason each is cited. The CVE is the durable
+  # identifier; the URL is expected to rot first.
+  - id: Adversa-2026-cryptographic-context-injection
+    kind: field-incident
+    title: "Cryptographic Context Injection: Grok data theft"
+    url: https://adversa.ai/blog/cryptographic-context-injection-grok-data-theft/
+    published: 2026-08-20
+    cve: none assigned
+    cited_for: >
+      Act 3. A payload the guardrails cannot read because they inspect rather
+      than execute, decrypted by the model in its own sandbox and treated as its
+      own runtime output. Cited for the mechanism only -- the name collides with
+      this exhibit's subject while pointing the opposite way, and is not adopted.
+    verified: 2026-08-24
+    note: >
+      Reported to xAI 2026-06-03 via HackerOne; per the writeup, acknowledged
+      without a mitigation timeline and still reproducible 2026-08-19. Not filed
+      with Google, whose programme scopes jailbreaks out. Unlike the two below,
+      this may still be live.
+    bearing_on_claims: [NEG-1]
+
+  - id: CVE-2026-24301
+    kind: field-incident
+    title: "CoSnitch: When Your AI Assistant Becomes Its Own Whistleblower"
+    url: https://www.varonis.com/blog/cosnitch
+    cve: CVE-2026-24301
+    cited_for: >
+      Act 4. Injection in webpage metadata poisoned Microsoft 365 Copilot's
+      memory across sessions. Deliberately not cited at Act 5: nothing moves
+      between transcripts, so SESSION_MISMATCH and CHAIN_BREAK never fire and
+      both seals are legitimate.
+    verified: 2026-08-24
+    note: >
+      Disclosed to Microsoft 2025-12, patched 2026-08-18. Found by questioning
+      Copilot about its own deep-link parameters until it named an undocumented
+      one -- a failure mode no provenance scheme addresses.
+    bearing_on_claims: [NEG-1]
+
+  - id: CVE-2026-42824
+    kind: field-incident
+    title: "SearchLeak: How We Turned M365 Copilot Into a One-Click Data Exfiltration Weapon"
+    url: https://www.varonis.com/blog/searchleak
+    cve: CVE-2026-42824
+    cited_for: >
+      Act 8a, in the negative. Only the first link of its chain is an
+      instruction/data problem; the other two are streaming-render order and a
+      CSP-allowlisted egress path. Cited to mark the boundary of this exhibit's
+      relevance, not to claim any of it.
+    verified: 2026-08-24
+    bearing_on_claims: [NEG-1, THREAT-1]
