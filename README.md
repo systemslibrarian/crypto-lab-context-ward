@@ -158,8 +158,24 @@ The attack surface is the one surveyed empirically in **arXiv:2506.02040** for
 the MCP ecosystem: tool poisoning, puppet attacks, rug pulls, and exploitation
 via malicious external resources. That fourth category is Act 8a exactly.
 
-Full citations, each verified against its arXiv abstract page and cited for what
-it actually supports, are in `docs/PRIOR-ART.md`.
+Three 2026 disclosures against shipping products make Act 8's argument outside a
+scripted mock. Adversa's **cryptographic context injection** against Grok and
+Gemini hides a payload in AES-256-GCM ciphertext that guardrails cannot read
+because they inspect rather than execute; the model decrypts it in its own
+sandbox and treats the plaintext as its own runtime output — Act 3, with real
+models and reported zero-click exfiltration. **CoSnitch** (CVE-2026-24301) hides
+injection in webpage metadata to poison Copilot's memory across sessions — Act
+4, and pointedly *not* the cross-session replay Act 5 catches, because nothing
+is moved between transcripts and every seal is legitimate. **SearchLeak**
+(CVE-2026-42824) runs its exfiltration through streaming-render order and a
+CSP-allowlisted egress path, neither of which any envelope touches. None of the
+three would have been prevented by anything in this exhibit. That is why they
+are cited.
+
+Full citations are in `docs/PRIOR-ART.md` — the papers verified against their
+arXiv abstract pages and cited for what they actually support, the field
+incidents kept in their own section and labelled as the weaker evidence class
+they are.
 
 ## How to Run Locally
 

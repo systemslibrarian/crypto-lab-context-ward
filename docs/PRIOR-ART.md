@@ -1,9 +1,14 @@
 # Prior art
 
-Every entry below was checked against its arXiv abstract page on **2026-08-20**,
+Every paper below was checked against its arXiv abstract page on **2026-08-20**,
 and each is cited for what it actually supports. Where a paper's title has
 changed between versions, the current title is given and the change noted —
 citing a superseded title is how a reference becomes unverifiable.
+
+The **Field incidents** section near the end is held to a different and weaker
+standard, and says so: those are vendor disclosure writeups, not peer-reviewed
+work. They are segregated rather than interleaved so that nothing there inherits
+the standard of the entries above it.
 
 There is deliberately **no coined attack name** here. The framing is *context
 injection + cryptographic context provenance*, which describes what the exhibit
@@ -114,6 +119,121 @@ Not prior art for the attack, but for the mechanics:
 * **Certificate Transparency (RFC 6962)** — the leaf/interior domain-separation
   discipline (`cw/v1/leaf` versus `cw/v1/chain`) is the same defence against
   confusing a leaf hash for an internal node.
+
+---
+
+## Field incidents
+
+Everything above is peer-reviewed or standards-track. What follows is not: these
+are vendor disclosure writeups, which is a different and weaker evidence class,
+and they are kept in their own section rather than mixed into the list above so
+that nothing here inherits a standard it does not meet. Each entry leads with a
+CVE where one was assigned, because the identifier will outlive the URL. All
+three were checked on **2026-08-24**.
+
+**None of these would have been prevented by the construction in this exhibit.
+That is why they are here.** The exhibit's central risk is a reader concluding
+that authenticated context handles injection. Act 8 argues otherwise from a
+scripted mock; these are the same argument made against shipping products.
+
+---
+
+### Cryptographic Context Injection — Grok and Gemini
+
+<https://adversa.ai/blog/cryptographic-context-injection-grok-data-theft/> ·
+Adversa AI, 20 August 2026 · no CVE assigned
+
+**Cited at Act 3 (injection via runtime result).**
+
+The payload is AES-256-GCM ciphertext. Guardrails inspect text but do not
+execute it, so at inspection time the plaintext does not exist anywhere to be
+inspected — the writeup's framing is that strong encryption cannot be shortcut
+in-weights, so recovery is forced through the code runtime. The model then
+decrypts the payload inside its own sandbox and treats the result as its own
+runtime output. The authors call this **trust laundering**: the plaintext
+inherits a credibility it would not have been given had it been pasted into the
+prompt directly. On Grok this reportedly reached zero-click exfiltration of the
+user's name, location, subscription tier and chat history from nothing more than
+a request to summarise a page.
+
+Act 3 is that shape. A payload arrives through the runtime channel — the one
+channel nobody thinks to treat as untrusted, because it appears to originate
+from the system itself. An envelope over that segment would have sealed it
+correctly and verified green. `SOURCE: RUNTIME` would have been an accurate
+label, and accuracy is the entirety of what the seal offers.
+
+> **Name collision, stated deliberately.** "Cryptographic context injection"
+> there means *encryption used to smuggle a payload past a filter*. This exhibit
+> uses cryptography to *authenticate* context. The two point in opposite
+> directions and the phrases are nearly identical. This document does not adopt
+> the name — see the note at the top of this file about coined names — and cites
+> the mechanism instead.
+
+**Disclosure status.** Reported to xAI on 3 June 2026 via HackerOne; per the
+writeup, acknowledged without specifics or a mitigation timeline and still
+reproducible on 19 August 2026. Not filed with Google, whose programme scopes
+jailbreaks out; the authors observe the vector's success rate against Google's
+agents fell significantly by August without being able to attribute the change.
+Unlike the two entries below, this one describes behaviour that may still be
+live.
+
+---
+
+### CoSnitch — Microsoft 365 Copilot · CVE-2026-24301
+
+<https://www.varonis.com/blog/cosnitch> · Varonis Threat Labs · disclosed to
+Microsoft December 2025, patched 18 August 2026
+
+**Cited at Act 4 (injection via persisted state).**
+
+Two parts. The `?q=` URL parameter combined with an undocumented `?autorun=1`
+caused an attacker-supplied prompt to execute on page load, with no click and no
+confirmation. Separately, prompt injection hidden in webpage metadata
+manipulated Copilot's **persistent memory across sessions**.
+
+That second part is Act 4, and specifically **not** Act 5. In a replay the
+attacker moves a sealed segment between transcripts, which is exactly what
+`SESSION_MISMATCH` and `CHAIN_BREAK` exist to name. Here nothing moves: the host
+legitimately writes the poisoned note during one session and legitimately reads
+it back in the next, and both segments seal correctly under their own session
+keys. The chain is intact, every check is green, and the content is hostile.
+This is the distinction Act 5 and Act 4 are built to hold apart, appearing in a
+shipped product.
+
+Worth noting separately for how it was found. The researchers questioned Copilot
+about its own deep-link parameters until it named the undocumented one — the
+refusals themselves carried usable detail. No provenance scheme addresses a
+system that will describe its own attack surface on request.
+
+---
+
+### SearchLeak — Microsoft 365 Copilot · CVE-2026-42824
+
+<https://www.varonis.com/blog/searchleak> · Varonis Threat Labs · remediated by
+Microsoft, rated critical
+
+**Cited in the negative, at "Do NOT use it as a prompt-injection defence".**
+
+A chain of three: the `q` URL parameter interpreted as instructions rather than
+as search text, an `<img>` tag in Copilot's streaming response firing before
+output sanitisation ran, and a server-side fetch through a CSP-allowlisted Bing
+image endpoint carrying the stolen data out in the request path. Only the first
+link is an instruction/data problem. The other two are a rendering-order problem
+and an egress problem.
+
+It is included precisely because it marks the honest boundary of this exhibit's
+relevance. Envelope verification has nothing to say about two of the three
+links, and sealing the first would not have broken the chain either. A
+construction that answers *was this altered* and *who supplied it* answers
+neither *should this render* nor *where may this connect*.
+
+---
+
+**One sampling caveat.** Two of the three entries are the same research team
+working on the same product. That reflects who publishes this kind of writeup,
+not a finding that Microsoft 365 Copilot is uniquely affected. Treat the
+distribution of these three as evidence about disclosure practice, and only
+their mechanisms as evidence about the failure modes.
 
 ---
 
