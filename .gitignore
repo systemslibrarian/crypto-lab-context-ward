@@ -7,3 +7,4 @@ playwright-report/
 
 # The build standard, kept locally; not part of the published lab.
 _MASTER-TEMPLATE.md
+chat.md
