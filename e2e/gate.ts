@@ -20,6 +20,7 @@
  */
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page } from '@playwright/test'
+import { auditControlNames, formatControlNameFailures } from './control-names.ts'
 
 export const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
 
@@ -93,6 +94,15 @@ export interface AxeOutcome {
 export async function runAxe(page: Page): Promise<AxeOutcome> {
   const byTags = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze()
   const byRules = await new AxeBuilder({ page }).withRules(EXTRA_RULES).analyze()
+
+  // axe's `label` rule accepts a bare `placeholder` as an accessible name, so a
+  // deleted label can leave this gate green. See `control-names.ts`. It is
+  // asserted here, inside the only path that runs axe, so it covers exactly the
+  // surfaces axe covers -- every state every spec drives, not just first paint.
+  expect(
+    formatControlNameFailures(await auditControlNames(page)),
+    'form controls named only by placeholder/title',
+  ).toEqual([])
 
   const shape = (rs: typeof byTags.violations): AxeResult[] =>
     rs.map((r) => ({
