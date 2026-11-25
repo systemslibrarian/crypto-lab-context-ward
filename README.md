@@ -20,23 +20,23 @@ with nothing marking where each piece came from.
 This exhibit seals every segment of that stream into an authenticated structure
 and then lets you attack it:
 
-* a **SHA-256 hash chain** binding each segment to its position and history,
-* a **role-separated HMAC-SHA-256 seal** derived per role through
+- a **SHA-256 hash chain** binding each segment to its position and history,
+- a **role-separated HMAC-SHA-256 seal** derived per role through
   **HKDF-SHA-256**, so a segment cannot be relabelled after the fact,
-* an **Ed25519 attestation** from each tool over the content it emitted, against
+- an **Ed25519 attestation** from each tool over the content it emitted, against
   a public key the agent pinned in advance.
 
 All of it is real. SHA-256, HMAC and HKDF come from WebCrypto; Ed25519 comes
-from a vendored, hash-pinned copy of `@noble/ed25519`. Nothing is hand-rolled
-and nothing is simulated.
+from a vendored, hash-pinned copy of `@noble/ed25519`. The cryptographic checks
+run on real bytes. The agents and tools are classroom simulations.
 
 The exhibit exists to separate three questions that get conflated constantly:
 
-| question | answered by | verdict |
-| --- | --- | --- |
-| Was this context altered? | hash chain, HMAC seal | **cryptography answers this** |
-| Who supplied it? | Ed25519 tool attestation | **cryptography answers this** |
-| Should the model obey it? | nothing here | **cryptography cannot answer this** |
+| question                  | answered by              | verdict                             |
+| ------------------------- | ------------------------ | ----------------------------------- |
+| Was this context altered? | hash chain, HMAC seal    | **cryptography answers this**       |
+| Who supplied it?          | Ed25519 tool attestation | **cryptography answers this**       |
+| Should the model obey it? | nothing here             | **cryptography cannot answer this** |
 
 **The agent is a deterministic scripted mock.** There is no model, no API key
 field, and no network call — the page ships with `connect-src 'none'` in its
@@ -76,10 +76,10 @@ avoid.
    protocol v2. Each produces its own named failure, never a generic "invalid".
 8. **What the crypto does not buy you** — the climax, and reachable straight
    from the demo path.
-   * **8a — honest tool, hostile payload.** `web_fetch` retrieves a poisoned
+   - **8a — honest tool, hostile payload.** `web_fetch` retrieves a poisoned
      page and signs exactly what it retrieved. The common case, and the one that
      generalises.
-   * **8b — malicious or compromised tool.** The pinned key is doing its job
+   - **8b — malicious or compromised tool.** The pinned key is doing its job
      perfectly; the thing holding it is hostile.
 
    Both land an all-green verification panel beside a compromised agent. The
@@ -95,11 +95,11 @@ that get hashed, and the raw sealed transcript.
 Use this construction when you need to answer **integrity and provenance**
 questions about an agent's context:
 
-* proving a transcript was not edited after the fact, for audit or incident
+- proving a transcript was not edited after the fact, for audit or incident
   review;
-* proving which tool produced a given piece of context;
-* preventing content from one session being replayed into another;
-* preventing a `tool_result` from being promoted to `system` in storage.
+- proving which tool produced a given piece of context;
+- preventing content from one session being replayed into another;
+- preventing a `tool_result` from being promoted to `system` in storage.
 
 **Do NOT use it as a prompt-injection defence.** It is not one. Every act from
 2 onward except 5 demonstrates content passing every check and compromising the
@@ -115,17 +115,17 @@ that assumption fails.
 
 Failures the exhibit names specifically, each with its own tamper control:
 
-| failure | means |
-| --- | --- |
-| `V_REJECTED` | unsupported protocol version, refused before any cryptography runs |
-| `MALFORMED` | structurally invalid envelope |
-| `SESSION_MISMATCH` | a segment from another conversation |
-| `SEQ_GAP` | something dropped, duplicated or reordered |
-| `CHAIN_BREAK` | the `prev` link disagrees with the recomputed `H_(n-1)` |
-| `ROLE_MISMATCH` | sealed as one role, presented as another |
-| `BAD_TAG` | the seal no longer covers this content |
-| `BAD_SIGNATURE` | the tool attestation does not verify |
-| `UNPINNED_TOOL` | signed by a key the agent never pinned |
+| failure            | means                                                              |
+| ------------------ | ------------------------------------------------------------------ |
+| `V_REJECTED`       | unsupported protocol version, refused before any cryptography runs |
+| `MALFORMED`        | structurally invalid envelope                                      |
+| `SESSION_MISMATCH` | a segment from another conversation                                |
+| `SEQ_GAP`          | something dropped, duplicated or reordered                         |
+| `CHAIN_BREAK`      | the `prev` link disagrees with the recomputed `H_(n-1)`            |
+| `ROLE_MISMATCH`    | sealed as one role, presented as another                           |
+| `BAD_TAG`          | the seal no longer covers this content                             |
+| `BAD_SIGNATURE`    | the tool attestation does not verify                               |
+| `UNPINNED_TOOL`    | signed by a key the agent never pinned                             |
 
 And the failures it **cannot** name, because there is nothing structurally wrong
 with them: hostile content in a correctly signed segment, a compromised host
@@ -134,20 +134,20 @@ minting its own seals, and a tool whose key is genuine and whose intent is not.
 Implementation traps this repo hit and fixed, documented rather than quietly
 patched:
 
-* **`ROLE_MISMATCH` was unreachable.** `role` is covered by `leaf_n`, so
+- **`ROLE_MISMATCH` was unreachable.** `role` is covered by `leaf_n`, so
   relabelling moves the chain head as well as the seal key — probing the stored
-  tag against the *current* head under other roles can never match. Naming a
+  tag against the _current_ head under other roles can never match. Naming a
   relabel requires recomputing the counterfactual leaf and chain step per
   candidate role. See `docs/MATH.md` §7.6 and `CLAIMS.yaml` `SEC-4`.
-* **The HKDF salt is the raw 32 session bytes, not the hex string.** Getting this
+- **The HKDF salt is the raw 32 session bytes, not the hex string.** Getting this
   wrong leaves every leaf and chain hash correct while every tag differs.
-* **Two CSS specificity bugs** caught by the accessibility gate: a link that was
+- **Two CSS specificity bugs** caught by the accessibility gate: a link that was
   distinguishable by colour alone, and a pressed tamper button rendering salmon
   text on a gold fill at 1.9:1.
 
 ## Real-World Usage
 
-The provenance-and-integrity layer here is close to the *authenticated context*
+The provenance-and-integrity layer here is close to the _authenticated context_
 primitive in **arXiv:2602.10481**, which formalises tamper-evident hash chains
 over dynamic LLM inputs. That paper reports 100% detection across six attack
 categories — for its **full layered system**, semantic validation included, not
@@ -165,7 +165,7 @@ because they inspect rather than execute; the model decrypts it in its own
 sandbox and treats the plaintext as its own runtime output — Act 3, with real
 models and reported zero-click exfiltration. **CoSnitch** (CVE-2026-24301) hides
 injection in webpage metadata to poison Copilot's memory across sessions — Act
-4, and pointedly *not* the cross-session replay Act 5 catches, because nothing
+4, and pointedly _not_ the cross-session replay Act 5 catches, because nothing
 is moved between transcripts and every seal is legitimate. **SearchLeak**
 (CVE-2026-42824) runs its exfiltration through streaming-render order and a
 CSP-allowlisted egress path, neither of which any envelope touches. None of the
@@ -240,11 +240,11 @@ anchored to a verbatim snippet of the code it describes. `npm run check:claims`
 fails the build if an anchor drifts. Among them are two the exhibit would be
 dishonest without:
 
-* **`NEG-1`** — *authenticated context does not prevent semantic injection*,
+- **`NEG-1`** — _authenticated context does not prevent semantic injection_,
   evidenced by six fixtures on which `verify.py` returns all-green while the
   scripted agent is compromised. `verify.py` prints them by name on every run
   **and fails if none exist**: the limitation is a verified claim, not a caveat.
-* **`THREAT-1`** — *role separation assumes a trusted host*, evidenced by a
+- **`THREAT-1`** — _role separation assumes a trusted host_, evidenced by a
   fixture the compromised-host control produces that verifies completely clean.
 
 **Accessibility is gated in CI.** WCAG 2.1 A/AA via `@axe-core/playwright`
@@ -271,6 +271,6 @@ production bundle is roughly 46 kB of JavaScript and 12 kB of CSS before gzip.
 
 ---
 
-*One of the browser demos in the [Crypto Lab](https://crypto-lab.systemslibrarian.dev/) suite.*
+_One of the browser demos in the [Crypto Lab](https://crypto-lab.systemslibrarian.dev/) suite._
 
-*"So whether you eat or drink or whatever you do, do it all for the glory of God." — 1 Corinthians 10:31*
+_"So whether you eat or drink or whatever you do, do it all for the glory of God." — 1 Corinthians 10:31_

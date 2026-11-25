@@ -123,7 +123,10 @@ export async function buildActs(): Promise<Act[]> {
     focus: 2,
     build: async () => {
       const h = await seededHost()
-      await h.append({ role: 'system', body: 'You are a release assistant. Be concise.' })
+      await h.append({
+        role: 'system',
+        body: 'You are a release assistant. Be concise.',
+      })
       await h.append({ role: 'user', body: TASK_TICKETS })
       await h.append({
         role: 'tool_result',
@@ -173,7 +176,10 @@ export async function buildActs(): Promise<Act[]> {
     focus: 2,
     build: async () => {
       const h = await seededHost()
-      await h.append({ role: 'system', body: 'You are a release assistant. Be concise.' })
+      await h.append({
+        role: 'system',
+        body: 'You are a release assistant. Be concise.',
+      })
       await h.append({ role: 'user', body: TASK_TICKETS })
       await h.append({
         role: 'tool_result',
@@ -224,7 +230,10 @@ export async function buildActs(): Promise<Act[]> {
     ],
     build: async () => {
       const h = await seededHost()
-      await h.append({ role: 'system', body: 'You are a finance assistant. Be careful with numbers.' })
+      await h.append({
+        role: 'system',
+        body: 'You are a finance assistant. Be careful with numbers.',
+      })
       await h.append({ role: 'user', body: TASK_INVOICE })
       await h.append({
         role: 'tool_result',
@@ -302,7 +311,10 @@ export async function buildActs(): Promise<Act[]> {
     ],
     build: async () => {
       const h = await seededHost()
-      await h.append({ role: 'system', body: 'You are a research assistant with a persistent scratchpad.' })
+      await h.append({
+        role: 'system',
+        body: 'You are a research assistant with a persistent scratchpad.',
+      })
       await h.append({ role: 'user', body: TASK_RESEARCH })
       await h.append({
         role: 'state',
@@ -327,8 +339,14 @@ export async function buildActs(): Promise<Act[]> {
   // --- Act 5: the one the crypto genuinely prevents -------------------------
   const priorSessionSegment = await (async () => {
     const old = await seededHost(SEEDS.priorSession, SEEDS.priorSessionKey)
-    await old.append({ role: 'system', body: 'You are a release assistant. Be concise.' })
-    await old.append({ role: 'user', body: 'Check whether the deploy key rotation finished' })
+    await old.append({
+      role: 'system',
+      body: 'You are a release assistant. Be concise.',
+    })
+    await old.append({
+      role: 'user',
+      body: 'Check whether the deploy key rotation finished',
+    })
     await old.append({
       role: 'tool_result',
       tool: 'ticket_db',
@@ -364,7 +382,10 @@ export async function buildActs(): Promise<Act[]> {
     focus: 2,
     build: async () => {
       const h = await seededHost()
-      await h.append({ role: 'system', body: 'You are a release assistant. Be concise.' })
+      await h.append({
+        role: 'system',
+        body: 'You are a release assistant. Be concise.',
+      })
       await h.append({ role: 'user', body: TASK_TICKETS })
       await h.append({
         role: 'tool_result',
@@ -400,7 +421,10 @@ export async function buildActs(): Promise<Act[]> {
     focus: 2,
     build: async () => {
       const h = await seededHost()
-      await h.append({ role: 'system', body: 'You are a release assistant. Be concise.' })
+      await h.append({
+        role: 'system',
+        body: 'You are a release assistant. Be concise.',
+      })
       await h.append({ role: 'user', body: TASK_TICKETS })
       await h.append({
         role: 'tool_result',
@@ -417,7 +441,8 @@ export async function buildActs(): Promise<Act[]> {
         id: 'corrupt-sig',
         label: 'Flip a bit in the tool signature',
         expect: 'BAD_SIGNATURE',
-        lesson: 'Ed25519 verification fails. The host seal is unaffected — different key, different claim.',
+        lesson:
+          'Ed25519 verification fails. The host seal is unaffected — different key, different claim.',
         apply: (t) => corruptSignature(t, 2),
       },
       {
@@ -463,7 +488,10 @@ export async function buildActs(): Promise<Act[]> {
     focus: 3,
     build: async () => {
       const h = await seededHost()
-      await h.append({ role: 'system', body: 'You are a release assistant. Be concise.' })
+      await h.append({
+        role: 'system',
+        body: 'You are a release assistant. Be concise.',
+      })
       await h.append({ role: 'user', body: TASK_TICKETS })
       await h.append({
         role: 'tool_result',
@@ -491,7 +519,8 @@ export async function buildActs(): Promise<Act[]> {
         id: 'drop',
         label: 'Drop a segment',
         expect: 'SEQ_GAP',
-        lesson: 'Removal leaves a hole. Selective omission is a tampering, and this names it as one.',
+        lesson:
+          'Removal leaves a hole. Selective omission is a tampering, and this names it as one.',
         apply: (t) => dropSegment(t, 2),
       },
       {
@@ -508,8 +537,8 @@ export async function buildActs(): Promise<Act[]> {
         label: 'Claim protocol v2',
         expect: 'V_REJECTED',
         lesson:
-          'Rejected before any cryptography runs. An unsupported version never reaches a code ' +
-          'path that might interpret its fields.',
+          'Earlier segments are checked normally. The unsupported segment is rejected before its ' +
+          'cryptographic checks and never reaches a code path that might interpret its fields.',
         apply: (t) => bumpVersion(t, 3),
       },
     ],
@@ -558,7 +587,10 @@ export async function buildActs(): Promise<Act[]> {
     ],
     build: async () => {
       const h = await seededHost()
-      await h.append({ role: 'system', body: 'You are a research assistant. Cite your sources.' })
+      await h.append({
+        role: 'system',
+        body: 'You are a research assistant. Cite your sources.',
+      })
       await h.append({ role: 'user', body: TASK_RESEARCH })
       await h.append({
         role: 'retrieved',
@@ -613,7 +645,10 @@ export async function buildActs(): Promise<Act[]> {
     ],
     build: async () => {
       const h = await seededHost()
-      await h.append({ role: 'system', body: 'You are a finance assistant. Be careful with numbers.' })
+      await h.append({
+        role: 'system',
+        body: 'You are a finance assistant. Be careful with numbers.',
+      })
       await h.append({ role: 'user', body: TASK_INVOICE })
       await h.append({
         role: 'tool_result',

@@ -12,7 +12,12 @@
 import { clear, el, short } from './dom.ts'
 import { checkRows, failureName } from './checks.ts'
 import { buildActs, type Act, type Cite } from '../acts/index.ts'
-import { verifyTranscript, type SealedSegment, type Transcript, type VerifyResult } from '../verify.ts'
+import {
+  verifyTranscript,
+  type SealedSegment,
+  type Transcript,
+  type VerifyResult,
+} from '../verify.ts'
 import { runAgent, SCRIPTED_TRANSCRIPT_DISCLOSURE, type AgentRun } from '../agent-mock.ts'
 import { leafHashHex, type Envelope } from '../envelope.ts'
 import { enc, toHex } from '../bytes.ts'
@@ -25,6 +30,7 @@ interface State {
   actIndex: number
   mode: Mode
   activeTamper: string | null
+  renderVersion: number
 }
 
 const ROLE_LABEL: Record<string, string> = {
@@ -80,10 +86,18 @@ function hero(): HTMLElement {
 }
 
 function disclosure(): HTMLElement {
-  return el('section', { class: 'ward-disclosure', role: 'note', 'aria-label': 'Scope of this demonstration' }, [
-    el('span', { class: 'ward-disclosure-tag' }, ['MOCK']),
-    el('p', {}, [SCRIPTED_TRANSCRIPT_DISCLOSURE]),
-  ])
+  return el(
+    'section',
+    {
+      class: 'ward-disclosure',
+      role: 'note',
+      'aria-label': 'Scope of this demonstration',
+    },
+    [
+      el('span', { class: 'ward-disclosure-tag' }, ['MOCK']),
+      el('p', {}, [SCRIPTED_TRANSCRIPT_DISCLOSURE]),
+    ],
+  )
 }
 
 function threeQuestions(): HTMLElement {
@@ -170,41 +184,45 @@ function fieldsTable(e: Envelope, leaf: string, chain: string): HTMLElement {
       ]),
     ])
 
-  return el('div', { class: 'ward-scroll', tabindex: '0', role: 'group', 'aria-label': 'Envelope fields' }, [
-    el('table', { class: 'ward-fields' }, [
-      el('caption', {}, [
-        'Every field is covered by leaf_n except prev, which mirrors the previous chain hash ' +
-          'and is checked against an independent recomputation.',
-      ]),
-      el('tbody', {}, [
-        row('v', String(e.v), 'leaf'),
-        row('session', short(e.session) + '…', 'leaf'),
-        row('seq', String(e.seq), 'leaf'),
-        row('role', e.role, 'leaf'),
-        row('tool', e.tool ?? '(null)', 'leaf'),
-        row('body', `${enc(e.body).length - 4} bytes`, 'leaf'),
-        row('prev', short(e.prev) + '…', 'mirror'),
-        el('tr', {}, [
-          el('th', { scope: 'row' }, ['leaf_n']),
-          el('td', {}, [short(leaf) + '…']),
-          el('td', {}, ['']),
+  return el(
+    'div',
+    {
+      class: 'ward-scroll',
+      tabindex: '0',
+      role: 'group',
+      'aria-label': 'Envelope fields',
+    },
+    [
+      el('table', { class: 'ward-fields' }, [
+        el('caption', {}, [
+          'Every field is covered by leaf_n except prev, which mirrors the previous chain hash ' +
+            'and is checked against an independent recomputation.',
         ]),
-        el('tr', {}, [
-          el('th', { scope: 'row' }, ['H_n']),
-          el('td', {}, [short(chain) + '…']),
-          el('td', {}, ['']),
+        el('tbody', {}, [
+          row('v', String(e.v), 'leaf'),
+          row('session', short(e.session) + '…', 'leaf'),
+          row('seq', String(e.seq), 'leaf'),
+          row('role', e.role, 'leaf'),
+          row('tool', e.tool ?? '(null)', 'leaf'),
+          row('body', `${enc(e.body).length - 4} bytes`, 'leaf'),
+          row('prev', short(e.prev) + '…', 'mirror'),
+          el('tr', {}, [
+            el('th', { scope: 'row' }, ['leaf_n']),
+            el('td', {}, [short(leaf) + '…']),
+            el('td', {}, ['']),
+          ]),
+          el('tr', {}, [
+            el('th', { scope: 'row' }, ['H_n']),
+            el('td', {}, [short(chain) + '…']),
+            el('td', {}, ['']),
+          ]),
         ]),
       ]),
-    ]),
-  ])
+    ],
+  )
 }
 
-function transcriptPanel(
-  t: Transcript,
-  result: VerifyResult,
-  act: Act,
-  mode: Mode,
-): HTMLElement {
+function transcriptPanel(t: Transcript, result: VerifyResult, act: Act, mode: Mode): HTMLElement {
   const items = t.segments.map((seg: SealedSegment, i) => {
     const e = seg.envelope
     const seg_result = result.segments[i]
@@ -235,25 +253,37 @@ function transcriptPanel(
   )
 }
 
-function verificationPanel(result: VerifyResult, agent: AgentRun): HTMLElement {
-  const rows = checkRows(result)
+function verificationPanel(result: VerifyResult, agent: AgentRun, total: number): HTMLElement {
+  const rows = checkRows(result, total)
 
   const verdict = !result.ok
-    ? { kind: 'caught', icon: '✗', label: 'TAMPERING DETECTED', note: '' }
+    ? {
+        kind: 'caught',
+        icon: '✗',
+        label: result.findings.some((f) => f.code === 'V_REJECTED')
+          ? 'UNSUPPORTED VERSION'
+          : 'TAMPERING DETECTED',
+        note: '',
+      }
     : agent.compromised
       ? {
           kind: 'alarm',
           icon: '!',
           label: 'VERIFIED — AND COMPROMISED',
           note:
-            'Every check below passed, and every one of them is telling the truth. The agent ' +
+            'All applicable transcript checks passed. The scripted agent ' +
             'was compromised anyway. Authenticity is not safety.',
         }
       : { kind: 'clean', icon: '✓', label: 'VERIFIED', note: '' }
 
   const verdictNode = el(
     'div',
-    { class: 'ward-verdict', 'data-verdict': verdict.kind, role: 'status', 'aria-live': 'polite' },
+    {
+      class: 'ward-verdict',
+      'data-verdict': verdict.kind,
+      role: 'status',
+      'aria-live': 'polite',
+    },
     [
       el('span', { class: 'ward-verdict-icon', 'aria-hidden': 'true' }, [verdict.icon]),
       el('span', {}, [
@@ -264,24 +294,31 @@ function verificationPanel(result: VerifyResult, agent: AgentRun): HTMLElement {
   )
 
   const checkItems = rows.map((row) =>
-    el('li', { class: 'ward-check', 'data-state': row.state === 'na' ? 'pending' : row.state }, [
-      el('span', { class: 'ward-check-icon', 'aria-hidden': 'true' }, [
-        row.state === 'ok' ? '✓' : row.state === 'fail' ? '✗' : '—',
-      ]),
-      el('span', {}, [
-        el('span', { class: 'ward-check-name' }, [
-          `${row.name} — ${row.state === 'ok' ? 'PASS' : row.state === 'fail' ? 'FAIL' : 'NOT CLAIMED'}`,
+    el(
+      'li',
+      {
+        class: 'ward-check',
+        'data-state': row.state === 'na' || row.state === 'partial' ? 'pending' : row.state,
+      },
+      [
+        el('span', { class: 'ward-check-icon', 'aria-hidden': 'true' }, [
+          row.state === 'ok' ? '✓' : row.state === 'fail' ? '✗' : '—',
         ]),
-        row.codes.length
-          ? el('span', { class: 'ward-check-detail' }, [
-              el('span', { class: 'ward-check-code' }, [
-                row.codes.map((c) => `${c} (${failureName(c)})`).join(', '),
-              ]),
-            ])
-          : null,
-        el('span', { class: 'ward-check-detail' }, [row.detail]),
-      ]),
-    ]),
+        el('span', {}, [
+          el('span', { class: 'ward-check-name' }, [
+            `${row.name} — ${row.state === 'ok' ? 'PASS' : row.state === 'fail' ? 'FAIL' : row.state === 'partial' ? 'INCOMPLETE' : 'NOT CLAIMED'}`,
+          ]),
+          row.codes.length
+            ? el('span', { class: 'ward-check-detail' }, [
+                el('span', { class: 'ward-check-code' }, [
+                  row.codes.map((c) => `${c} (${failureName(c)})`).join(', '),
+                ]),
+              ])
+            : null,
+          el('span', { class: 'ward-check-detail' }, [row.detail]),
+        ]),
+      ],
+    ),
   )
 
   return panel('VERIFICATION', null, [
@@ -323,9 +360,14 @@ async function renderAct(container: HTMLElement, state: State): Promise<void> {
   const act = state.acts[state.actIndex] as Act
   const control = act.tampers.find((c) => c.id === state.activeTamper) ?? null
 
+  const version = ++state.renderVersion
+  const mode = state.mode
+  container.replaceChildren(el('p', { role: 'status' }, ['Checking the selected transcript…']))
   const clean = await act.build()
   const transcript = control ? await control.apply(clean) : clean
   const result = await verifyTranscript(transcript)
+  const raw = mode === 'lab' ? await rawSection(transcript) : null
+  if (version !== state.renderVersion) return
   const agent = runAgent(transcript, act.task)
 
   clear(container)
@@ -348,7 +390,7 @@ async function renderAct(container: HTMLElement, state: State): Promise<void> {
   container.appendChild(
     el('div', { class: 'ward-grid' }, [
       transcriptPanel(transcript, result, act, state.mode),
-      verificationPanel(result, agent),
+      verificationPanel(result, agent, transcript.segments.length),
       agentPanel(agent, act),
     ]),
   )
@@ -370,9 +412,7 @@ async function renderAct(container: HTMLElement, state: State): Promise<void> {
     ]),
   )
 
-  if (state.mode === 'lab') {
-    container.appendChild(await rawSection(transcript))
-  }
+  if (raw) container.appendChild(raw)
 }
 
 function tamperSection(
@@ -384,11 +424,9 @@ function tamperSection(
 ): HTMLElement {
   const buttons: Node[] = [
     el('span', { class: 'ward-toolbar-label' }, ['BREAK IT:']),
-    el(
-      'button',
-      { type: 'button', 'aria-pressed': String(state.activeTamper === null) },
-      ['Untampered'],
-    ),
+    el('button', { type: 'button', 'aria-pressed': String(state.activeTamper === null) }, [
+      'Untampered',
+    ]),
   ]
   ;(buttons[1] as HTMLButtonElement).addEventListener('click', () => {
     state.activeTamper = null
@@ -466,12 +504,8 @@ async function rawSection(t: Transcript): Promise<HTMLElement> {
     lines.push('')
     lines.push(`  SHA-256 of the above = ${await leafHashHex(e)}`)
     lines.push('')
-    lines.push(
-      'Note the uint32 length prefix on every string. That is what makes the encoding',
-    )
-    lines.push(
-      'unambiguous: there is no syntax for two implementations to disagree about.',
-    )
+    lines.push('Note the uint32 length prefix on every string. That is what makes the encoding')
+    lines.push('unambiguous: there is no syntax for two implementations to disagree about.')
   }
 
   const raw = JSON.stringify(t, null, 2)
@@ -479,7 +513,12 @@ async function rawSection(t: Transcript): Promise<HTMLElement> {
   return panel('FULL LAB — RAW SEALED TRANSCRIPT', null, [
     el(
       'div',
-      { class: 'ward-scroll', tabindex: '0', role: 'group', 'aria-label': 'Encoding breakdown' },
+      {
+        class: 'ward-scroll',
+        tabindex: '0',
+        role: 'group',
+        'aria-label': 'Encoding breakdown',
+      },
       [el('pre', { class: 'ward-raw' }, [lines.join('\n')])],
     ),
     el('p', { class: 'ward-note' }, [
@@ -489,7 +528,12 @@ async function rawSection(t: Transcript): Promise<HTMLElement> {
     ]),
     el(
       'div',
-      { class: 'ward-scroll', tabindex: '0', role: 'group', 'aria-label': 'Raw sealed transcript' },
+      {
+        class: 'ward-scroll',
+        tabindex: '0',
+        role: 'group',
+        'aria-label': 'Raw sealed transcript',
+      },
       [el('pre', { class: 'ward-raw' }, [raw])],
     ),
   ])
@@ -501,7 +545,13 @@ async function rawSection(t: Transcript): Promise<HTMLElement> {
 
 export async function mount(root: HTMLElement): Promise<void> {
   const acts = await buildActs()
-  const state: State = { acts, actIndex: 0, mode: 'demo', activeTamper: null }
+  const state: State = {
+    acts,
+    actIndex: 0,
+    mode: 'demo',
+    activeTamper: null,
+    renderVersion: 0,
+  }
 
   root.appendChild(hero())
   root.appendChild(disclosure())
@@ -539,7 +589,11 @@ export async function mount(root: HTMLElement): Promise<void> {
   acts.forEach((a, i) => {
     const btn = el(
       'button',
-      { type: 'button', 'aria-pressed': String(i === 0), 'aria-label': `Act ${a.label}: ${a.title}` },
+      {
+        type: 'button',
+        'aria-pressed': String(i === 0),
+        'aria-label': `Act ${a.label}: ${a.title}`,
+      },
       [a.label],
     )
     btn.addEventListener('click', () => {

@@ -137,7 +137,9 @@ test.describe('the page tells the truth', () => {
 
     for (const label of ['1', '3', '7']) {
       await selectAct(page, label)
-      const counter = ((await page.locator('#app .ward-panel-head .ward-seq').first().textContent()) ?? '').trim()
+      const counter = (
+        (await page.locator('#app .ward-panel-head .ward-seq').first().textContent()) ?? ''
+      ).trim()
       const claimed = Number(counter.split(' ')[0])
       const rendered = await page.locator('#app .ward-seg').count()
       expect(claimed, `act ${label}: counter says ${counter}`).toBe(rendered)
@@ -157,7 +159,9 @@ test.describe('the page tells the truth', () => {
       const rows = await page.locator('#app .ward-check-name').allTextContents()
       const anyFail = rows.some((r) => r.endsWith('FAIL'))
       const verdict = ((await page.locator('#app .ward-verdict-label').textContent()) ?? '').trim()
-      const agentState = ((await page.locator('#app .ward-panel-head .ward-seq').nth(1).textContent()) ?? '').trim()
+      const agentState = (
+        (await page.locator('#app .ward-panel-head .ward-seq').nth(1).textContent()) ?? ''
+      ).trim()
 
       if (anyFail) {
         expect(verdict, `act ${label}`).toBe('TAMPERING DETECTED')
@@ -190,7 +194,9 @@ test.describe('the page tells the truth', () => {
       ).toHaveAttribute('data-verdict', 'alarm')
 
       // The agent obeyed at least one attacker directive.
-      expect(await page.locator('#app .ward-step[data-disposition="obeyed"]').count()).toBeGreaterThan(0)
+      expect(
+        await page.locator('#app .ward-step[data-disposition="obeyed"]').count(),
+      ).toBeGreaterThan(0)
 
       // And the manifest, which verify.py confirms, agrees this fixture is clean.
       const entry = manifest.entries.find((e) => e.file === `transcripts/act${label}.json`)
@@ -246,7 +252,9 @@ test.describe('the page tells the truth', () => {
           }
           // The failing check row must be the one that owns the code, not just
           // any row -- two surfaces that have to agree.
-          const failing = await page.locator('#app .ward-check[data-state="fail"] .ward-check-code').allTextContents()
+          const failing = await page
+            .locator('#app .ward-check[data-state="fail"] .ward-check-code')
+            .allTextContents()
           for (const code of entry!.expect_codes) {
             expect(failing.join(' '), `act ${label}: check rows must name ${code}`).toContain(code)
           }
@@ -254,7 +262,10 @@ test.describe('the page tells the truth', () => {
         checked++
       }
     }
-    expect(checked, 'every tamper control across the sampled acts was exercised').toBeGreaterThanOrEqual(11)
+    expect(
+      checked,
+      'every tamper control across the sampled acts was exercised',
+    ).toBeGreaterThanOrEqual(11)
   })
 
   test('the scripted-transcript disclosure is printed verbatim and persistently', async ({
@@ -328,10 +339,11 @@ test.describe('the page tells the truth', () => {
   test('[hidden] elements really are hidden', async ({ page }) => {
     await gotoWithReducedMotion(page)
     await waitForApp(page)
-    const leaks = await page.evaluate(() =>
-      Array.from(document.querySelectorAll('[hidden]')).filter(
-        (el) => getComputedStyle(el).display !== 'none',
-      ).length,
+    const leaks = await page.evaluate(
+      () =>
+        Array.from(document.querySelectorAll('[hidden]')).filter(
+          (el) => getComputedStyle(el).display !== 'none',
+        ).length,
     )
     expect(leaks).toBe(0)
   })
@@ -351,4 +363,21 @@ test.describe('the page tells the truth', () => {
 
     expect(external, `unexpected outbound requests: ${external.join(', ')}`).toEqual([])
   })
+})
+
+test('a rejected envelope version leaves the remaining transcript checks incomplete', async ({
+  page,
+}) => {
+  await gotoWithReducedMotion(page)
+  await waitForApp(page)
+  await selectAct(page, '7')
+  await page.getByRole('button', { name: 'Claim protocol v2' }).click()
+  await expect(page.locator('.ward-verdict-label')).toHaveText('UNSUPPORTED VERSION')
+  await expect(page.locator('.ward-check[data-state="ok"]')).toHaveCount(0)
+  await expect(page.locator('.ward-check[data-state="pending"]')).toHaveCount(5)
+  await expect(page.locator('.ward-check[data-state="pending"]').first()).toContainText(
+    '3 of 4 segments',
+  )
+  await page.getByRole('button', { name: 'Untampered' }).click()
+  await expect(page.locator('.ward-check[data-state="ok"]')).toHaveCount(6)
 })

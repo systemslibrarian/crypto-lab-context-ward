@@ -12,7 +12,7 @@ export interface CheckRow {
   name: string
   /** What this check is asking, in plain language. */
   asks: string
-  state: 'ok' | 'fail' | 'na'
+  state: 'ok' | 'fail' | 'na' | 'partial'
   /** Failure codes owned by this row, if any fired. */
   codes: FailureCode[]
   detail: string
@@ -48,13 +48,14 @@ const ROWS: RowSpec[] = [
     name: 'Chain integrity',
     asks: 'Does each segment hash onto the one before it?',
     owns: ['CHAIN_BREAK'],
-    okDetail: (r) => `Recomputed head H_${r.segments.length - 1} matches every stored prev link.`,
+    okDetail: (r) =>
+      `Checked every stored link against the preceding hash. The recomputed final head is H_${r.segments.length - 1}.`,
   },
   {
     name: 'Host seal (role-separated HMAC)',
     asks: 'Did the host seal this content, with this role, at this position?',
     owns: ['BAD_TAG', 'ROLE_MISMATCH'],
-    okDetail: (r) => `${r.segments.length} tags verify under their own role key, and no other.`,
+    okDetail: (r) => `${r.segments.length} tags verified using the role on each envelope.`,
   },
   {
     name: 'Tool attestation (Ed25519)',
@@ -70,7 +71,7 @@ const ROWS: RowSpec[] = [
   },
 ]
 
-export function checkRows(r: VerifyResult): CheckRow[] {
+export function checkRows(r: VerifyResult, total: number): CheckRow[] {
   return ROWS.map((spec) => {
     const hits = r.findings.filter((f) => spec.owns.includes(f.code))
     if (hits.length > 0) {
@@ -82,6 +83,15 @@ export function checkRows(r: VerifyResult): CheckRow[] {
         detail: hits
           .map((f) => (f.seq === null ? f.detail : `seq ${f.seq}: ${f.detail}`))
           .join(' · '),
+      }
+    }
+    if (r.segments.length < total) {
+      return {
+        name: spec.name,
+        asks: spec.asks,
+        state: 'partial' as const,
+        codes: [],
+        detail: `Verification stopped after ${r.segments.length} of ${total} segments. The remaining segments are unverified.`,
       }
     }
     // A transcript with no signed segments makes no attestation claim, and
