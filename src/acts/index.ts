@@ -352,9 +352,10 @@ export async function buildActs(): Promise<Act[]> {
       'The spliced segment is genuine: `ticket_db` really signed it, with the key the agent pinned, ' +
       'and the signature is untouched. It is simply from a different conversation.',
     establishes:
-      'Two independent failures. The signature covers `session` and `seq`, so it does not verify ' +
-      'here; and the chain does not accept a segment that was never folded into it. Old signed ' +
-      'content cannot silently become new-session content.',
+      'Two binding failures. The signature itself remains genuine over the old `session` and `seq`; ' +
+      'it does not attest to a position in this transcript. The session check rejects that old ' +
+      'session, and the chain rejects a segment that was never folded into this transcript. Old ' +
+      'signed content cannot silently become new-session content.',
     doesNotEstablish:
       'Protection against the same text being sent fresh, by a tool, into this session. Replay is ' +
       'a binding problem and binding is solvable. Acts 2 and 8 are not.',

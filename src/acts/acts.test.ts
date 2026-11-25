@@ -58,9 +58,12 @@ describe('the corrected teaching flow', () => {
   })
 
   it('the spliced act 5 segment carries a genuine signature — it fails on BINDING, not forgery', async () => {
-    const t = await act('act5').build()
+    const a = act('act5')
+    const t = await a.build()
     const spliced = t.segments[2]
     expect(spliced?.sig, 'the spliced segment is signed').toBeTruthy()
+    expect(a.establishes).toContain('signature itself remains genuine')
+    expect(a.establishes).not.toContain('does not verify here')
     // Its signature is real; it simply covers the OTHER session's identifier.
     const { verifyAttestation } = await import('../attest.ts')
     const { fromHex } = await import('../bytes.ts')
